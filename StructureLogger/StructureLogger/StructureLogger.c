@@ -47,8 +47,7 @@ void scan_encoder(uint8_t index);
 void test_encoder(uint8_t test);
 
 
-int main(void)
-{
+int main(void){
 	//DDRA = 0xff;
 	//ENCODER_DDR &= ~(_BV(ENCODER_PIN));
 	//ENCODER_PORT |= (_BV(ENCODER_PIN));
@@ -57,15 +56,25 @@ int main(void)
 	
 	sei();
 	
-	uart_puts("String stored in SRAM\r\n");
+	//uart_puts("String stored in SRAM\r\n");
+	uart_puts("AT+CMGS=\"07885500849\"\r");
+
+	_delay_ms(1000);
+	uart_puts("From le AVR");
+	uart_putc(0x1A);
+	uart_putc(0x0D);
+	uart_putc(0x0A);
+	
+	_delay_ms(5000);
+	
+	uart_puts("AT+CPOWD=1\r\n");
 	
     while(1)
     {
-        //TODO:: Please write your application code 
 
-		uart_puts("String stored in SRAM\r\n");
-		_delay_ms(1000);
-		read_dials();	
+		//uart_puts("AT+CMGS=\"07885500849\"");
+		_delay_ms(2000);
+		//read_dials();	
     }
 }
 
