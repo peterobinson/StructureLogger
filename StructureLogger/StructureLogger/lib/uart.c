@@ -390,6 +390,17 @@ void uart_init(unsigned int baudrate)
 
 }/* uart_init */
 
+/*************************************************************************
+Function: uart_flush()
+Purpose:  empties receive buffer
+Returns:  void
+**************************************************************************/
+
+void uart_flush(void)
+{
+	UART_RxHead = 0;
+	UART_RxTail = 0;
+}
 
 /*************************************************************************
 Function: uart_getc()

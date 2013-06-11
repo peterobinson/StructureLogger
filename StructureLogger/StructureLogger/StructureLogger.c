@@ -16,6 +16,7 @@
 #include <util/delay.h>
 
 #include "lib/uart.h"
+#include "sim900.h"
 
 
 
@@ -38,7 +39,7 @@
 
 
 
-uint8_t send_to_number[16];
+uint8_t send_to_number[10] = {7,8,8,5,5,0,0,8,4,9};
 
 
 void read_dials(void);
@@ -46,18 +47,34 @@ void encoder_select(uint8_t pos);
 void scan_encoder(uint8_t index);
 void test_encoder(uint8_t test);
 
-
 int main(void){
 	//DDRA = 0xff;
 	//ENCODER_DDR &= ~(_BV(ENCODER_PIN));
 	//ENCODER_PORT |= (_BV(ENCODER_PIN));
-	
+		
 	uart_init( UART_BAUD_SELECT(9600,F_CPU) ); 
 	
 	sei();
 	
+	if (sim900_poweron())
+	{
+		sim900_cmd_wait_response("AT+CCALR?", 1, 0);
+	}
+	
+	while(1)
+	{
+		 
+	}		 
 	//uart_puts("String stored in SRAM\r\n");
-	uart_puts("AT+CMGS=\"07885500849\"\r");
+
+	uart_puts("AT+CMGS=\"0");
+	
+	for (uint8_t i=0; i < 10; ++i) 
+	{
+		uart_putc(send_to_number[i] + 48);
+	}
+
+	uart_puts("\"\r");
 
 	_delay_ms(1000);
 	uart_puts("From le AVR");

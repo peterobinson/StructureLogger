@@ -107,6 +107,14 @@ extern void uart_init(unsigned int baudrate);
 
 
 /**
+   @brief   Flush input buffer
+   @param   void
+   @return  void
+*/
+extern void uart_flush(void);
+
+
+/**
  *  @brief   Get received byte from ringbuffer
  *
  * Returns in the lower byte the received character and in the 
