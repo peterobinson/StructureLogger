@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 #include <util/delay.h>
+#include <string.h>
 
 #include "lib/uart.h"
 #include "sim900.h"
@@ -58,7 +59,25 @@ int main(void){
 	
 	if (sim900_poweron())
 	{
-		sim900_cmd_wait_response("AT+CCALR?", 1, 0);
+		if (sim900_cmd_wait_response("AT+CCALR?", 1, 0))
+		{
+			if (sim900_test_last_response("1"))
+			{
+				uart_puts("AT+CMGS=\"0");
+				
+				for (uint8_t i=0; i < 10; ++i)
+				{
+					uart_putc(send_to_number[i] + 48);
+				}
+
+				uart_puts("\"\r");
+
+				_delay_ms(1000);
+				uart_puts("From le AVR");
+				uart_putc(0x1A);
+				uart_putc(0x0D);
+			}
+		}
 	}
 	
 	while(1)

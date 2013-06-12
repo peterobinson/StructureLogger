@@ -27,7 +27,7 @@ typedef struct {
 	char *response;
 } at_cmd_t;
 
-typedef enum {STATE_COMMAND, STATE_EQUALS, STATE_QUESTION, STATE_PARAM} at_cmd_parse_state_t;
+typedef enum {STATE_COMMAND, STATE_EQUALS, STATE_PARAM} at_cmd_parse_state_t; //STATE_QUESTION,
 
 extern uint8_t sim900_poweron(void);
 
@@ -35,8 +35,13 @@ extern uint8_t sim900_cmd_wait_response(const char *command, uint8_t max_tries, 
 
 extern uint8_t sim900_get_response();
 
-at_cmd_t parse_command(const char *command);
+extern char* sim900_get_last_response(void);
 
+extern at_cmd_t sim900_parse_command(const char *command);
+
+extern uint8_t sim900_test_last_response(const char *wanted);
+
+extern void sim900_parse_response(at_cmd_t *parsed_command);
 
 
 #endif /* SIM900_H_ */

@@ -12,14 +12,9 @@
 #include "lib/uart.h"
 #include "sim900.h"
 
-
-
 #include <stdint.h>
 #include <util/delay.h>
 #include <string.h>
-
-
-
 
 
 char result_buff[32];
@@ -31,10 +26,9 @@ uint8_t sim900_poweron(void)
 	return sim900_cmd_wait_response("AT", 5, 100);
 }
 
-
 uint8_t sim900_cmd_wait_response(const char *command, uint8_t max_tries, uint8_t wait_tenths)
 {
-	at_cmd_t parsed_command = parse_command(command);
+	at_cmd_t parsed_command = sim900_parse_command(command);
 	
 	for (uint8_t i=0; i < max_tries; i++)
 	{
@@ -51,9 +45,11 @@ uint8_t sim900_cmd_wait_response(const char *command, uint8_t max_tries, uint8_t
 		if (sim900_get_response())
 		{
 			if (strstr(result_buff, "ERROR")) // some error has occurred (invalid cmd probably)
-			{
+			{	
 				return 0;	
 			}
+			
+			sim900_parse_response(&parsed_command);
 			
 			return 1;	
 		}
@@ -66,13 +62,49 @@ uint8_t sim900_cmd_wait_response(const char *command, uint8_t max_tries, uint8_t
 		{
 			_delay_ms(10);
 		}
-		
 	}
 	
 	return 0;
 }
 
-at_cmd_t parse_command(const char *command)
+char* sim900_get_last_response(void)
+{
+	return result_buff;
+}
+
+uint8_t sim900_test_last_response(const char *wanted)
+{
+	return (strcmp(wanted, result_buff) == 0);
+}
+
+void sim900_parse_response(at_cmd_t *parsed_command)
+{
+	if(parsed_command->syntax == EXTENDED)
+	{
+		if (parsed_command->type == READ)
+		{
+			// form of read answer: +<command>:<space><result>
+			// so need to skip strlen(command) + 2 (not 3 due to array index starting at zero)
+			
+			uint8_t command_len = strlen(parsed_command->command) + 2;
+			uint8_t result_len = buff_pos - 1;
+			
+			if (command_len <= result_len)
+			{
+				buff_pos = 0;
+				
+				for (uint8_t c = command_len; c < result_len; c++)
+				{
+					result_buff[buff_pos++] = result_buff[c];	
+				}
+				
+				result_buff[buff_pos++] = '\0';
+			}
+		}
+	}
+}
+
+at_cmd_t sim900_parse_command(const char *command)
 {
 	at_cmd_t parsed_command;
 	
@@ -152,9 +184,8 @@ at_cmd_t parse_command(const char *command)
 uint8_t sim900_get_response()
 {
 	buff_pos = 0;
-	char rx;
-	uint8_t i = 0;
-	uint8_t found_command = 0;
+	char rx, lastchar;
+	uint8_t i = 0, found_line = 0;
 
 	while(1)
 	{
@@ -167,29 +198,31 @@ uint8_t sim900_get_response()
 		
 		if (rx != 0x00)
 		{
-			if (!found_command)
+			if (rx == '\n' && lastchar == '\r')
 			{
-				if (rx == 0x0A)
+				if (found_line)
 				{
-					found_command = 1;
-				}
-			}
-			else
-			{
-				if (rx == 0x0D) // end of this line
-				{
+					result_buff[buff_pos++] = '\0';
 					return 1;
 				}
 				
-				if (rx != 0x0A)
+				found_line = 1;
+			}				
+			else if (found_line)
+			{
+				if (lastchar == '\r')
 				{
-					result_buff[buff_pos] = rx;
-					buff_pos++;
+					result_buff[buff_pos++] = '\r';
 				}
-			}
+				else if (rx != '\r')
+				{
+					result_buff[buff_pos++] = rx;
+				}
 				
-					
+			}				
+						
 			i = 0;
+			lastchar = rx;
 			continue;
 		}
 		i++;
