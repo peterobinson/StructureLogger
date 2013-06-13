@@ -63,6 +63,8 @@ int main(void){
 		{
 			if (sim900_test_last_response("1"))
 			{
+				sim900_send_sms(send_to_number, "some random message as dasd asd as dasd s");
+			/*	
 				uart_puts("AT+CMGS=\"0");
 				
 				for (uint8_t i=0; i < 10; ++i)
@@ -76,6 +78,7 @@ int main(void){
 				uart_puts("From le AVR");
 				uart_putc(0x1A);
 				uart_putc(0x0D);
+			*/
 			}
 		}
 	}

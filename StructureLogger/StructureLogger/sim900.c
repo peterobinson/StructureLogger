@@ -16,6 +16,8 @@
 #include <util/delay.h>
 #include <string.h>
 
+#define SMS_BUFFER (3+5+13+1+160+1)
+
 
 char result_buff[32];
 
@@ -62,6 +64,47 @@ uint8_t sim900_cmd_wait_response(const char *command, uint8_t max_tries, uint8_t
 		{
 			_delay_ms(10);
 		}
+		
+		
+	}
+	
+	return 0;
+}
+
+uint8_t sim900_send_sms(uint8_t *number, char *message)
+{	
+	char sms_string[SMS_BUFFER] = "AT+CMGS=\"0";
+	
+	uint8_t buff_len = 10;
+	
+	if (strlen(message) <= 160)
+	{
+		uint8_t i;
+		
+		for (i=0; i < 10; ++i)
+		{
+			sms_string[buff_len++] = (char)number[i] + 48;
+		}
+		
+		sms_string[buff_len++] = '"';
+		sms_string[buff_len++] = '\r';
+		
+		for (i=0; i < 160; i++)
+		{
+			if (sms_string[i] == '\0')
+			{
+				break;
+			}
+			
+			sms_string[buff_len++] = message[i];
+		}
+		
+		sms_string[buff_len++] = 0x1A;
+		
+		sms_string[buff_len++] = '\0';
+		
+		return sim900_cmd_wait_response(sms_string, 1, 100);
+		
 	}
 	
 	return 0;
