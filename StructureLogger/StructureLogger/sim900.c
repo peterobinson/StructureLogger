@@ -16,7 +16,7 @@
 #include <util/delay.h>
 #include <string.h>
 
-#define SMS_BUFFER (3+5+13+1+160+1)
+#define SMS_BUFFER (3+5+13+1)
 
 
 char result_buff[32];
@@ -42,8 +42,9 @@ uint8_t sim900_cmd_wait_response(const char *command, uint8_t max_tries, uint8_t
 		uart_flush();
 		
 		uart_puts(command);
-		uart_puts("\r");
 		
+		uart_puts("\r");
+	
 		if (sim900_get_response())
 		{
 			if (strstr(result_buff, "ERROR")) // some error has occurred (invalid cmd probably)
@@ -73,11 +74,20 @@ uint8_t sim900_cmd_wait_response(const char *command, uint8_t max_tries, uint8_t
 
 uint8_t sim900_send_sms(uint8_t *number, char *message)
 {	
-	char sms_string[SMS_BUFFER] = "AT+CMGS=\"0";
+	// basic command is:
+	// send AT+CMGS="phone_num"<cr>
+	// wait for ><sp>
+	// send message
+	// send 0x1A
+	char sms_string[SMS_BUFFER]; //= "AT+CMGS=\"0";
+	
+	sprintf(sms_string, "AT+CMGS=\"0");
 	
 	uint8_t buff_len = 10;
 	
-	if (strlen(message) <= 160)
+	uint8_t msg_length = strlen(message);
+	
+	if (msg_length <= 160)
 	{
 		uint8_t i;
 		
@@ -87,24 +97,20 @@ uint8_t sim900_send_sms(uint8_t *number, char *message)
 		}
 		
 		sms_string[buff_len++] = '"';
-		sms_string[buff_len++] = '\r';
-		
-		for (i=0; i < 160; i++)
-		{
-			if (sms_string[i] == '\0')
-			{
-				break;
-			}
-			
-			sms_string[buff_len++] = message[i];
-		}
-		
-		sms_string[buff_len++] = 0x1A;
-		
+
 		sms_string[buff_len++] = '\0';
 		
-		return sim900_cmd_wait_response(sms_string, 1, 100);
+		sim900_cmd_wait_response(sms_string, 1, 100);
 		
+		if (sim900_test_last_response("> "))
+		{
+			for (i=0; i < msg_length; i++)
+			{
+				uart_putc(message[i]);
+			}
+
+			uart_putc(0x1A);
+		}		
 	}
 	
 	return 0;
@@ -207,6 +213,10 @@ at_cmd_t sim900_parse_command(const char *command)
 					}
 					break;
 				case STATE_PARAM:
+					if (buff_pos > 14) // don't overflow param array
+					{
+						break;
+					}					
 					param[buff_pos++] = this_char;
 					break;
 			}			
@@ -234,7 +244,7 @@ uint8_t sim900_get_response()
 	{
 		if (i > 254)
 		{
-			return 0;
+			break;
 		}
 		
 		rx = uart_getc();
@@ -271,5 +281,10 @@ uint8_t sim900_get_response()
 		i++;
 		_delay_ms(10);
 		
+	}
+	
+	if (found_line)
+	{
+		result_buff[buff_pos++] = '\0';
 	}
 }
