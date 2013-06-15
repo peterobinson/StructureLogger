@@ -45,4 +45,6 @@ extern void sim900_parse_response(at_cmd_t *parsed_command);
 
 extern uint8_t sim900_send_sms(uint8_t *number, char *message);
 
+extern uint8_t sim900_send_sms_fast(uint8_t *number, char *message);
+
 #endif /* SIM900_H_ */

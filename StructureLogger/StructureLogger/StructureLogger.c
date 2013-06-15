@@ -63,7 +63,7 @@ int main(void){
 		{
 			if (sim900_test_last_response("1"))
 			{
-				sim900_send_sms(send_to_number, "wobble flobble weeeee!");
+				sim900_send_sms_fast(send_to_number, "wobble flobble weeeee!");
 			/*	
 				uart_puts("AT+CMGS=\"0");
 				

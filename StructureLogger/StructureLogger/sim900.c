@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <util/delay.h>
 #include <string.h>
+#include <stdio.h> 
 
 #define SMS_BUFFER (3+5+13+1)
 
@@ -43,7 +44,7 @@ uint8_t sim900_cmd_wait_response(const char *command, uint8_t max_tries, uint8_t
 		
 		uart_puts(command);
 		
-		uart_puts("\r");
+		uart_putc('\r');
 	
 		if (sim900_get_response())
 		{
@@ -113,6 +114,58 @@ uint8_t sim900_send_sms(uint8_t *number, char *message)
 		}		
 	}
 	
+	return 0;
+}
+
+uint8_t sim900_send_sms_fast(uint8_t *number, char *message)
+{
+	// basic command is:
+	// send AT+CMGS="phone_num"<cr>
+	// wait for ><sp>
+	// send message
+	// send 0x1A
+	
+	uint8_t msg_length = strlen(message);
+	
+	// if (msg_length <= 160) // too long to send...
+	
+	uart_flush();
+	
+	uart_puts("AT+CMGS=\"0");
+	
+	uint8_t i=0;
+	
+	for (i=0; i < 10; ++i)
+	{
+		uart_putc((char)number[i] + 48);
+	}
+	
+	uart_putc('"');
+	uart_putc('\r');
+	
+	//wait for "> " to be received
+
+	while(uart_getc() != '>')
+	{
+		if (i > 254)
+		{
+			uart_putc(0x1B); // send escape
+			uart_putc('\r');
+			return 0;
+		}
+		
+		i++;
+		_delay_ms(10);
+	}
+	
+	for (i=0; i < msg_length; i++)
+	{
+		uart_putc(message[i]);
+	}
+	
+	uart_putc(0x1A);
+	uart_putc('\r');
+		
 	return 0;
 }
 
@@ -287,4 +340,6 @@ uint8_t sim900_get_response()
 	{
 		result_buff[buff_pos++] = '\0';
 	}
+	
+	return 0;
 }
