@@ -5,8 +5,6 @@
  *  Author: Peter
  */ 
 
-#define F_CPU 8000000UL
-
 #include <stdlib.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -53,65 +51,43 @@ int main(void){
 	//ENCODER_DDR &= ~(_BV(ENCODER_PIN));
 	//ENCODER_PORT |= (_BV(ENCODER_PIN));
 		
-	uart_init( UART_BAUD_SELECT(9600,F_CPU) ); 
-	
-	sei();
+	sim900_init();
 	
 	if (sim900_poweron())
 	{
-		if (sim900_cmd_wait_response("AT+CCALR?", 1, 0))
+		for (uint8_t i=0; i < 20; i++)
+		{
+			sim900_cmd_wait_response("AT+CCALR?");
+			
+			if (sim900_test_last_response("1"))
+			{
+				sim900_send_sms(send_to_number, "How are you today?");
+				break;
+			}
+			
+			_delay_ms(500);
+		}
+		/*
+		if (sim900_cmd_wait_response("AT+CCALR?"))
 		{
 			if (sim900_test_last_response("1"))
 			{
-				sim900_send_sms_fast(send_to_number, "wobble flobble weeeee!");
-			/*	
-				uart_puts("AT+CMGS=\"0");
-				
-				for (uint8_t i=0; i < 10; ++i)
-				{
-					uart_putc(send_to_number[i] + 48);
-				}
-
-				uart_puts("\"\r");
-
-				_delay_ms(1000);
-				uart_puts("From le AVR");
-				uart_putc(0x1A);
-				uart_putc(0x0D);
-			*/
+				sim900_send_sms(send_to_number, "How are you today?");
+			
 			}
-		}
+		}*/
 	}
+	
+	sim900_cmd_wait_response("AT+CPOWD=1");
 	
 	while(1)
 	{
 		 
 	}		 
-	//uart_puts("String stored in SRAM\r\n");
 
-	uart_puts("AT+CMGS=\"0");
-	
-	for (uint8_t i=0; i < 10; ++i) 
-	{
-		uart_putc(send_to_number[i] + 48);
-	}
-
-	uart_puts("\"\r");
-
-	_delay_ms(1000);
-	uart_puts("From le AVR");
-	uart_putc(0x1A);
-	uart_putc(0x0D);
-	uart_putc(0x0A);
-	
-	_delay_ms(5000);
-	
-	uart_puts("AT+CPOWD=1\r\n");
-	
     while(1)
     {
 
-		//uart_puts("AT+CMGS=\"07885500849\"");
 		_delay_ms(2000);
 		//read_dials();	
     }

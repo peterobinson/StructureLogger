@@ -39,6 +39,7 @@
             this.chkAppendNewline = new System.Windows.Forms.CheckBox();
             this.btnSendAT = new System.Windows.Forms.Button();
             this.btnSendText = new System.Windows.Forms.Button();
+            this.btn_sendUDP = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -174,11 +175,22 @@
             this.btnSendText.UseVisualStyleBackColor = true;
             this.btnSendText.Click += new System.EventHandler(this.btnSendText_Click);
             // 
+            // btn_sendUDP
+            // 
+            this.btn_sendUDP.Location = new System.Drawing.Point(520, 15);
+            this.btn_sendUDP.Name = "btn_sendUDP";
+            this.btn_sendUDP.Size = new System.Drawing.Size(75, 23);
+            this.btn_sendUDP.TabIndex = 11;
+            this.btn_sendUDP.Text = "Send UDP";
+            this.btn_sendUDP.UseVisualStyleBackColor = true;
+            this.btn_sendUDP.Click += new System.EventHandler(this.btn_sendUDP_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(698, 448);
+            this.Controls.Add(this.btn_sendUDP);
             this.Controls.Add(this.btnSendText);
             this.Controls.Add(this.btnSendAT);
             this.Controls.Add(this.chkAppendNewline);
@@ -215,6 +227,7 @@
         private System.Windows.Forms.CheckBox chkAppendNewline;
         private System.Windows.Forms.Button btnSendAT;
         private System.Windows.Forms.Button btnSendText;
+        private System.Windows.Forms.Button btn_sendUDP;
     }
 }
 

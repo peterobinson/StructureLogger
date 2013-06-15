@@ -24,100 +24,87 @@ char result_buff[32];
 
 uint8_t buff_pos = 0;
 
-uint8_t sim900_poweron(void)
+void sim900_init(void)
 {
-	return sim900_cmd_wait_response("AT", 5, 100);
+	DDRD |= _BV(PD6);
+	
+	power_pin_low();
+	
+	uart_init( UART_BAUD_SELECT(9600,F_CPU) );
+	
+	sei();
+	
+	
 }
 
-uint8_t sim900_cmd_wait_response(const char *command, uint8_t max_tries, uint8_t wait_tenths)
+void power_pin_high(void)
+{
+	// write Pin D6 high
+	PORTD |= _BV(PD6);
+}
+
+void power_pin_low(void)
+{	
+	// write Pin D6 low
+	PORTD &= ~(_BV(PD6));
+}
+
+uint8_t sim900_poweron(void)
+{
+	if (sim900_cmd_wait_response("AT") != 0) // check to see if it's already turned on
+	{
+		return 1;
+	}
+	
+	toggle_power();
+	//_delay_ms(2000);
+	
+	while(sim900_cmd_wait_response("AT") == 0)
+	{
+		_delay_ms(250);
+	}
+	return 1;
+}
+
+void toggle_power(void)
+{
+	power_pin_high();
+	
+	_delay_ms(1000);
+	
+	power_pin_low();
+}
+
+uint8_t sim900_cmd_wait_response(const char *command)
 {
 	at_cmd_t parsed_command = sim900_parse_command(command);
 	
-	for (uint8_t i=0; i < max_tries; i++)
+	uart_flush();
+		
+	uart_puts(command);
+		
+	uart_putc('\r');
+	
+	if (sim900_get_response())
 	{
-		if (i > 0)
-		{
-			_delay_ms(500);
+		if (strstr(result_buff, "ERROR")) // some error has occurred (invalid cmd probably)
+		{	
+			return 0;	
 		}
-		
-		uart_flush();
-		
-		uart_puts(command);
-		
-		uart_putc('\r');
-	
-		if (sim900_get_response())
-		{
-			if (strstr(result_buff, "ERROR")) // some error has occurred (invalid cmd probably)
-			{	
-				return 0;	
-			}
 			
-			sim900_parse_response(&parsed_command);
+		sim900_parse_response(&parsed_command);
 			
-			return 1;	
-		}
-		else
-		{
-			return 0;
-		}
-		
-		for (uint8_t t=0; t < wait_tenths; t++)
-		{
-			_delay_ms(10);
-		}
-		
-		
+		return 1;	
 	}
-	
+	else
+	{
+		return 0;
+	}
+			
 	return 0;
 }
 
-uint8_t sim900_send_sms(uint8_t *number, char *message)
-{	
-	// basic command is:
-	// send AT+CMGS="phone_num"<cr>
-	// wait for ><sp>
-	// send message
-	// send 0x1A
-	char sms_string[SMS_BUFFER]; //= "AT+CMGS=\"0";
-	
-	sprintf(sms_string, "AT+CMGS=\"0");
-	
-	uint8_t buff_len = 10;
-	
-	uint8_t msg_length = strlen(message);
-	
-	if (msg_length <= 160)
-	{
-		uint8_t i;
-		
-		for (i=0; i < 10; ++i)
-		{
-			sms_string[buff_len++] = (char)number[i] + 48;
-		}
-		
-		sms_string[buff_len++] = '"';
-
-		sms_string[buff_len++] = '\0';
-		
-		sim900_cmd_wait_response(sms_string, 1, 100);
-		
-		if (sim900_test_last_response("> "))
-		{
-			for (i=0; i < msg_length; i++)
-			{
-				uart_putc(message[i]);
-			}
-
-			uart_putc(0x1A);
-		}		
-	}
-	
-	return 0;
-}
-
-uint8_t sim900_send_sms_fast(uint8_t *number, char *message)
+at_status sim900_send_sms(uint8_t *number, char *message)
 {
 	// basic command is:
 	// send AT+CMGS="phone_num"<cr>
@@ -127,7 +114,10 @@ uint8_t sim900_send_sms_fast(uint8_t *number, char *message)
 	
 	uint8_t msg_length = strlen(message);
 	
-	// if (msg_length <= 160) // too long to send...
+	if (msg_length >= 160)
+	{
+		return STATUS_SMS_MESSAGE_TOO_LONG;
+	}
 	
 	uart_flush();
 	
@@ -151,7 +141,7 @@ uint8_t sim900_send_sms_fast(uint8_t *number, char *message)
 		{
 			uart_putc(0x1B); // send escape
 			uart_putc('\r');
-			return 0;
+			return STATUS_SMS_COMMAND_ERROR;
 		}
 		
 		i++;
@@ -165,8 +155,21 @@ uint8_t sim900_send_sms_fast(uint8_t *number, char *message)
 	
 	uart_putc(0x1A);
 	uart_putc('\r');
+	
+	while(sim900_get_response() == 0)
+	{
+	}	
+	
+	at_cmd_t parsed_command;	
+	
+	parsed_command.syntax = EXTENDED;
+	parsed_command.type = READ;
+	parsed_command.command = "+CMGS";
+
+	sim900_parse_response(&parsed_command);
+	
 		
-	return 0;
+	return STATUS_SMS_SENT;
 }
 
 char* sim900_get_last_response(void)
@@ -292,11 +295,14 @@ uint8_t sim900_get_response()
 	buff_pos = 0;
 	char rx, lastchar;
 	uint8_t i = 0, found_line = 0;
+	
+	result_buff[0] = '\0';
 
 	while(1)
 	{
 		if (i > 254)
 		{
+			return 0;
 			break;
 		}
 		
@@ -341,5 +347,117 @@ uint8_t sim900_get_response()
 		result_buff[buff_pos++] = '\0';
 	}
 	
-	return 0;
+	return 1;
 }
+
+/*/////////////////////////////////////////////////////////////////////////
+
+NTP connection
+
+http://www.edaboard.com/thread238483.html
+
+// needed?
+AT+CGATT???
+
+Connect GPRS:
+
+AT+CSTT="goto.virginmobile.uk","user",""
+
+// turn on gprs
+AT+CIIRC
+
+// get IP
+AT+CIFSR
+
+// send packet - can use 0.uk.pool.ntp.org instead 
+AT+CIPSTART="UDP","31.193.133.197","123"
+
+AT+CIPSEND
+// wait for >
+// send packet, e.g.
+
+ byte[] packet = new byte[49];
+ packet[0] = 0xE3;
+ packet[1] = 0;
+ packet[2] = 6;
+ packet[3] = 0xEC;
+ packet[12] = 49;
+ packet[13] = 0x4E;
+ packet[14] = 49;
+ packet[15] = 52;
+ packet[48] = 0x1A;
+ 
+ // receive response from server 48 bytes.
+ bytes 40-43 contain number of seconds since 1900
+ 
+ example working:
+ 
+ // response packet
+
+	 24 03 06 E9 00 00 04 5F
+	 00 00 00 00 C1 CC 72 E8
+	 D5 67 48 68 29 11 EF FF
+	 00 00 00 00 00 00 00 00
+	 D5 67 52 CA 18 90 B7 FF
+	 D5 67 52 CA 18 90 F7 FF 
+
+	 ntp - (D5 67 52 CA) => 3580318410
+	 epoc - 2208988800 (seconds to 1 jan 1970 from 1 jan 1900)
+
+	 unix:  ntp - epox => 1371329610 - correct!
+
+	 hour: (unix % 86400) / 3600 => 75210 / 3600 = 20.89
+
+	 minutes: (unix % 3600) / 60 => 3210 / 60 = 53.5
+
+	 seconds: (unix % 60) = 30
+	 
+	 ---
+	 
+	 to work out date need to count leap days and add to the date based on 365 days in each year
+	 
+	 days since 1970: unix / 86400 => 15871.87 (num days = 15871)
+	 
+	 approx year since 1970 = (num days / 365) => 43.48 (43)
+	 day in year = num days - (approx year * 365) => 176
+	 
+	 count leap years before 2013 - only special case in range is 2000, which was leap year
+	 
+	 (approx year / 4) + 1 = 11.75 => 11 leap years (hence days) 
+	 
+	 so days in year become: (day in year) + (leap-days) = 187
+	 
+	 // TODO: handle wrapping case where days in year > 365/6, depending on if current year is a leap year.
+	 
+	 Now to convert days (187) to month + day
+	 
+	 array of days in months: [31,28,31,30,31,30,31,31,30,31,30,31]
+	 
+	 month total = 39;
+	 current_month = 1;
+	 
+	 for current_month = 1; current_month < 12; current_month++
+	 {
+		if month_total > days-in-year
+		{
+			break;
+		}
+		 
+		month_total += array[current_month];
+	 }		 
+		
+	 // current month will have the correct month number
+	 
+	 day in month = current_month - days-in-year
+	 
+	 
+	 // this isn't quite right....
+	 
+	 
+	 
+ 
+ AT+CIPCLOSE
+ 
+ 
+
+/////////////////////////////////////////////////////////////////////////*/

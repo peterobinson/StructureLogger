@@ -188,6 +188,11 @@ namespace SerialConsole
        //     printInputData(ByteFormatting.ByteToHex(data, true));
         }
 
+        private void processInput2(string line)
+        {
+            printInputData(line);
+        }
+
 
 
         private void Read()
@@ -211,6 +216,21 @@ namespace SerialConsole
 
                 }
             }
+        }
+
+        private void ReadLine()
+        {
+            while (_continue)
+            {
+                try
+                {
+                    string message = _serialPort.ReadLine() + "\n";
+                   
+                    this.Invoke((MethodInvoker)(() => { processInput2(message); }));
+                }
+                catch (TimeoutException) { }
+            }
+         
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
@@ -292,6 +312,23 @@ namespace SerialConsole
             _serialPort.Write(new byte[] { 0x1A }, 0, 1);
             cmdInput.Clear();
 
+        }
+
+        private void btn_sendUDP_Click(object sender, EventArgs e)
+        {
+            // http://arduino.cc/en/Tutorial/UdpNTPClient
+            byte[] packet = new byte[49];
+            packet[0] = 0xE3;
+            packet[1] = 0;
+            packet[2] = 6;
+            packet[3] = 0xEC;
+            packet[12] = 49;
+            packet[13] = 0x4E;
+            packet[14] = 49;
+            packet[15] = 52;
+            packet[48] = 0x1A;
+
+            _serialPort.Write(packet, 0, 49);
         }
     
     }
