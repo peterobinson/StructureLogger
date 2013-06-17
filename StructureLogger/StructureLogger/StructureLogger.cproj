@@ -95,10 +95,16 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ntp.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="lib\uart.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="lib\uart.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="ntp.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="sim900.c">

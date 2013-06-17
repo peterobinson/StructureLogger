@@ -16,6 +16,7 @@
 
 #include "lib/uart.h"
 #include "sim900.h"
+#include "ntp.h"
 
 
 
@@ -53,6 +54,7 @@ int main(void){
 		
 	sim900_init();
 	
+
 	if (sim900_poweron())
 	{
 		for (uint8_t i=0; i < 20; i++)

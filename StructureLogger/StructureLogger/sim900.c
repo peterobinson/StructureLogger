@@ -425,15 +425,16 @@ AT+CIPSEND
 	 
 	 (approx year / 4) + 1 = 11.75 => 11 leap years (hence days) 
 	 
-	 so days in year become: (day in year) + (leap-days) = 187
+	 so days in year become: (day in year) - (leap-days) = 165
 	 
-	 // TODO: handle wrapping case where days in year > 365/6, depending on if current year is a leap year.
+	 // TODO: handle wrapping case where days in year < leap days, depending on if last year is a leap year.
 	 
 	 Now to convert days (187) to month + day
 	 
 	 array of days in months: [31,28,31,30,31,30,31,31,30,31,30,31]
+	 array of days in leap_year : [31,29,31,30,31,30,31,31,30,31,30,31]
 	 
-	 month total = 39;
+	 month total = 31;
 	 current_month = 1;
 	 
 	 for current_month = 1; current_month < 12; current_month++
@@ -448,10 +449,10 @@ AT+CIPSEND
 		
 	 // current month will have the correct month number
 	 
-	 day in month = current_month - days-in-year
+	 day in month = days-in-year - (month_total - array[current_month-1])
 	 
 	 
-	 // this isn't quite right....
+	 
 	 
 	 
 	 
