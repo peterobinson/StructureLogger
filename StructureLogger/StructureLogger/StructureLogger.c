@@ -37,8 +37,6 @@
 
 //#define _DEBUG 1
 
-
-
 uint8_t send_to_number[10] = {7,8,8,5,5,0,0,8,4,9};
 
 
@@ -54,7 +52,8 @@ int main(void){
 		
 	sim900_init();
 	
-
+	ntp_load_UTC(3580318410);
+	
 	if (sim900_poweron())
 	{
 		for (uint8_t i=0; i < 20; i++)

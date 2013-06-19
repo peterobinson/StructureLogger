@@ -6,66 +6,63 @@
  */ 
 
 #include <stdint.h>
+#include "ntp.h"
 
 #define EPOC 2208988800UL
 
 uint8_t month_days[] = {31,28,31,30,31,30,31,31,30,31,30,31};
 uint8_t month_days_leap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
 
-void ntp_load_UTC(uint32_t utc)
+datetime_t ntp_load_UTC(uint32_t utc)
 {
+	datetime_t date;
+	
 	uint32_t unix = utc - EPOC;
 	
-	uint8_t hour = (unix % 86400) / 3600;
-	uint8_t minutes = (unix % 3600) / 60;
-	uint8_t seconds = (unix % 60);
+	date.hours = (unix % 86400) / 3600;
+	date.minutes = (unix % 3600) / 60;
+	date.seconds = (unix % 60);
 	
-	// to work out date need to count leap days and add to the date based on 365 days in each year
-	uint16_t days_since_epoc = unix / 8600;
-	uint16_t years_since_epoc = days_since_epoc / 365;
+	uint16_t days_since_epoc = (unix / 86400) + 1;
+
+	uint16_t running_day_total = 0;
+	uint16_t year;
 	
-	uint16_t day_in_year = days_since_epoc - (years_since_epoc * 365);
-	
-	// count leap years (days) between epoc and year - only special case in range is 2000, which was leap year
-	uint8_t leap_days = ((years_since_epoc - 3) >> 2) + 1; // /4
-	
-	// shift day in year by leap days
-	
-	if (day_in_year <= leap_days)
+	for (year = 1970; year < 2038; year++)
 	{
-		uint8_t dif = leap_days - day_in_year;
-		if ((years_since_epoc + 1) % 4 == 0) // last year had 366 days
-		{
-			day_in_year = 366 - dif;
-		}
-		else
-		{
-			day_in_year = 365 - dif;
-		}
-	}
-	else
-	{
-		day_in_year -= leap_days;
-	}
-	
-	// now to get the date
-	
-	uint16_t running_day_total = 31;
-	
-	uint8_t current_month = 1;
-	
-	uint8_t *day_array = ((years_since_epoc + 1) % 4 == 0) ? month_days_leap : month_days;
-	
-	for (current_month = 1; current_month < 12; current_month++)
-	{
-		if (running_day_total > day_in_year)
+		if (running_day_total >= days_since_epoc)
 		{
 			break;
 		}
 		
-		running_day_total += day_array[current_month];
+		running_day_total += (year % 4 == 0) ? 366 : 365;
+	}
+	
+	year--;
+	
+	date.year = year;
+	
+	uint16_t day_in_year = ((year % 4 == 0) ? 366 : 365) - (running_day_total - days_since_epoc);
+	
+	uint16_t running_month_total = 31;
+	
+	uint8_t current_month = 1;
+	
+	uint8_t *day_array = (year % 4 == 0) ? month_days_leap : month_days;
+	
+	for (current_month = 1; current_month < 12; current_month++)
+	{
+		if (running_month_total >= day_in_year)
+		{
+			break;
+		}
+		
+		running_month_total += day_array[current_month];
 	}	
 	
-	uint8_t day_in_month = day_in_year - (running_day_total - day_array[current_month-1]);
+	date.month = current_month;
+	
+	date.day = day_in_year - (running_month_total - day_array[current_month-1]);
 
+	return date;
 }

@@ -349,6 +349,11 @@ uint8_t sim900_get_response()
 	
 	return 1;
 }
+/*
+void sim900_data_connect(void)
+{
+	//AT+CSTT="goto.virginmobile.uk","user",""
+}*/
 
 /*/////////////////////////////////////////////////////////////////////////
 
