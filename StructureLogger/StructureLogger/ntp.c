@@ -13,7 +13,7 @@
 uint8_t month_days[] = {31,28,31,30,31,30,31,31,30,31,30,31};
 uint8_t month_days_leap[] = {31,29,31,30,31,30,31,31,30,31,30,31};
 
-datetime_t ntp_load_UTC(uint32_t utc)
+datetime_t ntp_decode_UTC(uint32_t utc)
 {
 	datetime_t date;
 	
@@ -65,4 +65,20 @@ datetime_t ntp_load_UTC(uint32_t utc)
 	date.day = day_in_year - (running_month_total - day_array[current_month-1]);
 
 	return date;
+}
+
+char* ntp_build_packet(void)
+{
+	char packet[48];
+
+	packet[0] = 0xE3;
+	packet[1] = 0;
+	packet[2] = 6;
+	packet[3] = 0xEC;
+	packet[12] = 49;
+	packet[13] = 0x4E;
+	packet[14] = 49;
+	packet[15] = 52;
+	
+	return packet;
 }

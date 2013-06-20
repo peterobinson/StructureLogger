@@ -18,8 +18,8 @@ typedef struct {
 	uint8_t seconds;
 } datetime_t;
 
-datetime_t ntp_load_UTC(uint32_t utc);
-
+datetime_t ntp_decode_UTC(uint32_t utc);
+char* ntp_build_packet(void);
 
 
 #endif /* NTP_H_ */

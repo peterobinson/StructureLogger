@@ -11,6 +11,7 @@
 
 #include "lib/uart.h"
 #include "sim900.h"
+#include "ntp.h"
 
 #include <stdint.h>
 #include <util/delay.h>
@@ -349,11 +350,46 @@ uint8_t sim900_get_response()
 	
 	return 1;
 }
-/*
-void sim900_data_connect(void)
+
+uint8_t sim900_data_connect(void)
 {
-	//AT+CSTT="goto.virginmobile.uk","user",""
-}*/
+	sim900_cmd_wait_response("AT+CSTT=\"goto.virginmobile.uk\",\"user\",\"\"");
+	sim900_cmd_wait_response("AT+CIIRC");
+	sim900_cmd_wait_response("AT+CIFSR");
+	sim900_cmd_wait_response("AT+CIPSTART=\"UDP\",\"31.193.133.197\",\"123\"");
+	
+	char* packet = ntp_build_packet();
+	
+	uart_puts("AT+CIPSEND");
+	
+	uart_putc('\r');
+	
+	//wait for "> " to be received
+	uint8_t i;
+	
+	while(uart_getc() != '>')
+	{
+		if (i > 254)
+		{
+			uart_putc(0x1B); // send escape
+			uart_putc('\r');
+			return 0;
+		}
+		
+		i++;
+		_delay_ms(10);
+	}
+	
+	for (i=0; i < 48; i++)
+	{
+		uart_putc(packet[i]);
+	}
+	
+	uart_putc(0x1A);
+	uart_putc('\r');
+	
+	return 1;
+}
 
 /*/////////////////////////////////////////////////////////////////////////
 
