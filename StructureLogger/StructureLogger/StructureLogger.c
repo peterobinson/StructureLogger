@@ -56,6 +56,8 @@ int main(void){
 	
 	sim900_data_connect();
 	
+	while(1) {}
+	
 	if (sim900_poweron())
 	{
 		for (uint8_t i=0; i < 20; i++)

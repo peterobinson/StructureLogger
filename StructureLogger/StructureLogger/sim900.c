@@ -353,9 +353,15 @@ uint8_t sim900_get_response()
 
 uint8_t sim900_data_connect(void)
 {
+	sim900_cmd_wait_response("AT+CGATT=1");
+	sim900_cmd_wait_response("AT+CGDCONT=1,\"IP\",\"goto.virginmobile.uk\"");
+	//_delay_ms(3000);
 	sim900_cmd_wait_response("AT+CSTT=\"goto.virginmobile.uk\",\"user\",\"\"");
-	sim900_cmd_wait_response("AT+CIIRC");
+	_delay_ms(3000);
+	sim900_cmd_wait_response("AT+CIICR");
+	_delay_ms(3000);
 	sim900_cmd_wait_response("AT+CIFSR");
+	_delay_ms(3000);
 	sim900_cmd_wait_response("AT+CIPSTART=\"UDP\",\"31.193.133.197\",\"123\"");
 	
 	char* packet = ntp_build_packet();
@@ -397,6 +403,10 @@ NTP connection
 
 http://www.edaboard.com/thread238483.html
 
+also
+
+http://www.edaboard.com/thread208731.html
+
 // needed?
 AT+CGATT???
 
@@ -405,7 +415,7 @@ Connect GPRS:
 AT+CSTT="goto.virginmobile.uk","user",""
 
 // turn on gprs
-AT+CIIRC
+AT+CIICR
 
 // get IP
 AT+CIFSR

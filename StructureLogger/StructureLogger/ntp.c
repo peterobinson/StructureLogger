@@ -69,7 +69,7 @@ datetime_t ntp_decode_UTC(uint32_t utc)
 
 char* ntp_build_packet(void)
 {
-	char packet[48];
+	char packet[48] = {0};
 
 	packet[0] = 0xE3;
 	packet[1] = 0;
