@@ -353,18 +353,31 @@ uint8_t sim900_get_response()
 
 uint8_t sim900_data_connect(void)
 {
-	sim900_cmd_wait_response("AT+CGATT=1");
-	sim900_cmd_wait_response("AT+CGDCONT=1,\"IP\",\"goto.virginmobile.uk\"");
-	//_delay_ms(3000);
-	sim900_cmd_wait_response("AT+CSTT=\"goto.virginmobile.uk\",\"user\",\"\"");
+	if(!sim900_cmd_wait_response("AT+CGATT=1")) { return 0; }
+	if(!sim900_cmd_wait_response("AT+CGDCONT=1,\"IP\",\"goto.virginmobile.uk\"")) {return 0;}
 	_delay_ms(3000);
-	sim900_cmd_wait_response("AT+CIICR");
+	if(!sim900_cmd_wait_response("AT+CSTT=\"goto.virginmobile.uk\",\"user\",\"\"")) { return 0;}
 	_delay_ms(3000);
-	sim900_cmd_wait_response("AT+CIFSR");
+	if(!sim900_cmd_wait_response("AT+CIICR")) { return 0; }
 	_delay_ms(3000);
-	sim900_cmd_wait_response("AT+CIPSTART=\"UDP\",\"31.193.133.197\",\"123\"");
+	if(!sim900_cmd_wait_response("AT+CIFSR")) {return 0;}
+	_delay_ms(3000);
+	if(!sim900_cmd_wait_response("AT+CIPSTART=\"UDP\",\"31.193.133.197\",\"123\"")) { return 0; }
+	//if(!sim900_cmd_wait_response("AT+CIPSTART=\"TCP\",\"188.64.184.21\",\"80\"")) { return 0; }
+	_delay_ms(3000);
 	
-	char* packet = ntp_build_packet();
+char packet[48] = {0};
+
+packet[0] = 0xE3;
+packet[1] = 0;
+packet[2] = 6;
+packet[3] = 0xEC;
+packet[12] = 49;
+packet[13] = 0x4E;
+packet[14] = 49;
+packet[15] = 52;
+
+	//char* packet = ntp_build_packet();
 	
 	uart_puts("AT+CIPSEND");
 	
@@ -385,7 +398,19 @@ uint8_t sim900_data_connect(void)
 		i++;
 		_delay_ms(10);
 	}
+	/*
+	uart_puts("GET /assets/css/widgets/news.css HTTP/1.1");
+	uart_putc('\r');
+	uart_putc('\n');
 	
+	uart_puts("HOST: www.earm.co.uk");
+	uart_putc('\r');
+	uart_putc('\n');
+	uart_putc(0x1A);
+	uart_putc('\r');
+	
+	while(1) {}
+	*/
 	for (i=0; i < 48; i++)
 	{
 		uart_putc(packet[i]);
@@ -393,6 +418,38 @@ uint8_t sim900_data_connect(void)
 	
 	uart_putc(0x1A);
 	uart_putc('\r');
+	
+	// wanted result are bytes 40-43 from the response
+	//_delay_ms(2000);
+	sim900_get_response();
+	
+	_delay_ms(2000);
+	
+	char utc_seconds[4];
+	
+	for(i=0; i < 44; i++)
+	{
+		char current_byte = uart_getc();
+		
+		if (i >= 40)
+		{
+			utc_seconds[i-40] = current_byte;
+		}
+	}
+		
+	//uart_puts(utc_seconds);
+	
+	uint32_t utc_time = utc_seconds[3];
+	utc_time |= ((uint32_t)utc_seconds[2])<<8;
+	utc_time |= ((uint32_t)utc_seconds[1])<<16;
+	utc_time |= ((uint32_t)utc_seconds[0])<<24;
+	
+	
+	
+	ntp_decode_UTC(utc_time);
+	
+	
+	sim900_cmd_wait_response("AT+CIPSHUT");
 	
 	return 1;
 }

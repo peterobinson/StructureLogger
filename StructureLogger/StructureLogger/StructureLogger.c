@@ -52,7 +52,7 @@ int main(void){
 		
 	sim900_init();
 	
-	ntp_decode_UTC(3580318410);
+	//ntp_decode_UTC(3580318410);
 	
 	sim900_data_connect();
 	
