@@ -366,16 +366,9 @@ uint8_t sim900_data_connect(void)
 	//if(!sim900_cmd_wait_response("AT+CIPSTART=\"TCP\",\"188.64.184.21\",\"80\"")) { return 0; }
 	_delay_ms(3000);
 	
-char packet[48] = {0};
-
-packet[0] = 0xE3;
-packet[1] = 0;
-packet[2] = 6;
-packet[3] = 0xEC;
-packet[12] = 49;
-packet[13] = 0x4E;
-packet[14] = 49;
-packet[15] = 52;
+	char packet[NTP_PACKET_LENGTH] = {0};
+		
+	ntp_build_packet(packet, NTP_PACKET_LENGTH);
 
 	//char* packet = ntp_build_packet();
 	

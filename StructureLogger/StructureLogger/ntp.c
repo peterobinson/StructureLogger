@@ -67,10 +67,13 @@ datetime_t ntp_decode_UTC(uint32_t utc)
 	return date;
 }
 
-char* ntp_build_packet(void)
+int ntp_build_packet(char* packet, uint8_t length)
 {
-	char packet[48] = {0};
-
+	if (length < 48)
+	{
+		return 0;
+	}
+	
 	packet[0] = 0xE3;
 	packet[1] = 0;
 	packet[2] = 6;

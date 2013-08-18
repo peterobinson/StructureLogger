@@ -9,6 +9,8 @@
 #ifndef NTP_H_
 #define NTP_H_
 
+#define NTP_PACKET_LENGTH 48
+
 typedef struct {
 	uint16_t year;
 	uint8_t month;
@@ -19,7 +21,7 @@ typedef struct {
 } datetime_t;
 
 datetime_t ntp_decode_UTC(uint32_t utc);
-char* ntp_build_packet(void);
+int ntp_build_packet(char* packet, uint8_t length);
 
 
 #endif /* NTP_H_ */
