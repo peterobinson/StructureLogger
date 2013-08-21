@@ -441,7 +441,8 @@ Returns:  none
 void uart_putc(unsigned char data)
 {
     unsigned char tmphead;
-
+	
+	//int port = PINA;
     
     tmphead  = (UART_TxHead + 1) & UART_TX_BUFFER_MASK;
     

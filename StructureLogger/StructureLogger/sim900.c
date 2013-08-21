@@ -355,16 +355,16 @@ uint8_t sim900_data_connect(void)
 {
 	if(!sim900_cmd_wait_response("AT+CGATT=1")) { return 0; }
 	if(!sim900_cmd_wait_response("AT+CGDCONT=1,\"IP\",\"goto.virginmobile.uk\"")) {return 0;}
-	_delay_ms(3000);
+	//_delay_ms(3000);
 	if(!sim900_cmd_wait_response("AT+CSTT=\"goto.virginmobile.uk\",\"user\",\"\"")) { return 0;}
-	_delay_ms(3000);
+	//_delay_ms(3000);
 	if(!sim900_cmd_wait_response("AT+CIICR")) { return 0; }
-	_delay_ms(3000);
+	//_delay_ms(3000);
 	if(!sim900_cmd_wait_response("AT+CIFSR")) {return 0;}
-	_delay_ms(3000);
+	//_delay_ms(3000);
 	if(!sim900_cmd_wait_response("AT+CIPSTART=\"UDP\",\"31.193.133.197\",\"123\"")) { return 0; }
 	//if(!sim900_cmd_wait_response("AT+CIPSTART=\"TCP\",\"188.64.184.21\",\"80\"")) { return 0; }
-	_delay_ms(3000);
+	//_delay_ms(3000);
 	
 	char packet[NTP_PACKET_LENGTH] = {0};
 		
@@ -391,19 +391,7 @@ uint8_t sim900_data_connect(void)
 		i++;
 		_delay_ms(10);
 	}
-	/*
-	uart_puts("GET /assets/css/widgets/news.css HTTP/1.1");
-	uart_putc('\r');
-	uart_putc('\n');
-	
-	uart_puts("HOST: www.earm.co.uk");
-	uart_putc('\r');
-	uart_putc('\n');
-	uart_putc(0x1A);
-	uart_putc('\r');
-	
-	while(1) {}
-	*/
+
 	for (i=0; i < 48; i++)
 	{
 		uart_putc(packet[i]);
@@ -412,37 +400,34 @@ uint8_t sim900_data_connect(void)
 	uart_putc(0x1A);
 	uart_putc('\r');
 	
-	// wanted result are bytes 40-43 from the response
-	//_delay_ms(2000);
-	sim900_get_response();
-	
-	_delay_ms(2000);
+	// wait for response (will be "SEND OK" if successful and should probably check for this)
+	while(sim900_get_response() == 0) {}
 	
 	char utc_seconds[4];
 	
 	for(i=0; i < 44; i++)
 	{
-		char current_byte = uart_getc();
+		int current_byte;
+		
+		// wait for non-empty bytes
+		while((current_byte = uart_getc()) == UART_NO_DATA) {};
 		
 		if (i >= 40)
 		{
 			utc_seconds[i-40] = current_byte;
 		}
 	}
-		
-	//uart_puts(utc_seconds);
 	
+	sim900_cmd_wait_response("AT+CIPCLOSE");
+	
+	sim900_cmd_wait_response("AT+CIPSHUT");
+			
 	uint32_t utc_time = utc_seconds[3];
 	utc_time |= ((uint32_t)utc_seconds[2])<<8;
 	utc_time |= ((uint32_t)utc_seconds[1])<<16;
 	utc_time |= ((uint32_t)utc_seconds[0])<<24;
 	
-	
-	
 	ntp_decode_UTC(utc_time);
-	
-	
-	sim900_cmd_wait_response("AT+CIPSHUT");
 	
 	return 1;
 }
